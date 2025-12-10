@@ -1,19 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import "./media.css";
 
 function App() {
   const [texto, setTexto] = useState("");
-  const blacklist = ["X²", "C", "⌫", "X³", "√", "∛", "−∕+", "="];
+  const [temOp, setTemOp] = useState(false);
+  const [temVirgula, setVirgula] = useState(false);
 
-  //eslint-disable-next-line
-  function adicionar(e: any) {
-    if (blacklist.includes(e.target.textContent)) {
+  const blacklist = ["X²", "X³", "√", "∛", "−∕+", "="];
+  const num = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+  const op = ["%", "÷", "×", "−", "+"];
+
+  function processarEntrada(valor: string) {
+    console.log(typeof texto);
+    // Valores que não aparecem
+    if (blacklist.includes(valor)) return;
+    else if (
+      op.includes(valor) &&
+      !temOp &&
+      texto !== "" &&
+      temVirgula == false
+    ) {
+      // Operadores
+      setTexto((t) => t + valor);
+      setTemOp(true);
       return;
-    } else {
-      setTexto(texto + e.target.textContent);
+    } else if (num.includes(valor)) {
+      // Números
+      setTexto((t) => t + valor);
+      setTemOp(false);
+      setVirgula(false);
+      return;
+    } else if (valor == "c" || valor == "C") {
+      // Deleta todos
+      setTexto("");
+      setTemOp(false);
+    } else if (valor == "⌫") {
+      setTexto((t) => t.slice(0, -1));
     }
   }
+  //eslint-disable-next-line
+  function adicionar(e: any) {
+    const valor = e.target.textContent;
+    processarEntrada(valor);
+  }
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      const tecla = e.key;
+
+      // números
+      if (/[0-9]/.test(tecla)) {
+        processarEntrada(tecla);
+        return;
+      }
+
+      const mapaOp: Record<string, string> = {
+        "+": "+",
+        "-": "−",
+        "*": "×",
+        "/": "÷",
+        "%": "%",
+      };
+
+      if (mapaOp[tecla]) {
+        processarEntrada(mapaOp[tecla]);
+        return;
+      }
+
+      // backspace
+      if (tecla === "Backspace") {
+        processarEntrada("⌫");
+        return;
+      }
+
+      // Enter
+      if (tecla === "c") {
+        processarEntrada("c");
+      }
+    }
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+    //eslint-disable-next-line
+  }, [texto, temOp]);
 
   return (
     <>
@@ -24,10 +94,10 @@ function App() {
 
         <div id="btnBox">
           <button className="btnCalc" onClick={adicionar}>
-            &#37;
+            X²
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            X²
+            X³
           </button>
           <button className="btnCalc" onClick={adicionar}>
             C
@@ -37,7 +107,7 @@ function App() {
           </button>
 
           <button className="btnCalc" onClick={adicionar}>
-            X³
+            &#37;
           </button>
           <button className="btnCalc" onClick={adicionar}>
             &#8730;
