@@ -16,7 +16,7 @@ function App() {
 
   function processarEntrada(valor: string) {
     if (blacklist.includes(valor)) {
-      const partes = texto.match(/(\d+(?:[.,]\d+)?|[+\-*/x÷%])/g) || [];
+      const partes = texto.match(/(-?\d+(?:[.,]\d+)?|[+\-*/x÷×−%])/g) || [];
       const ultimo = partes[partes.length - 1];
 
       if (valor == "X²") {
