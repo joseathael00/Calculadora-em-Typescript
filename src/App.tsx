@@ -8,14 +8,35 @@ function App() {
   const [temOp, setTemOp] = useState(false);
   const [temVirgula, setVirgula] = useState(false);
 
-  const blacklist = ["X²", "X³", "√", "∛", "−∕+"];
+  const blacklist = ["X²", "X³", "√", "∛", "±"];
   const num = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
   const op = ["%", "÷", "×", "−", "+"];
 
+  // const partes = texto.match(/(\d+(?:[.,]\d+)?|[+\-*/x÷%])/g) || [];
+
   function processarEntrada(valor: string) {
-    console.log(typeof texto);
-    // Valores que não aparecem
-    if (blacklist.includes(valor)) return;
+    if (blacklist.includes(valor)) {
+      const partes = texto.match(/(\d+(?:[.,]\d+)?|[+\-*/x÷%])/g) || [];
+      const ultimo = partes[partes.length - 1];
+
+      if (valor == "X²") {
+        const num = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(num ** 2);
+      } else if (valor == "X³") {
+        const num = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(num ** 3);
+      } else if (valor == "√") {
+        const num = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(Math.sqrt(num));
+      } else if (valor == "∛") {
+        const num = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(Math.cbrt(num));
+      } else if (valor == "±") {
+        const num = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(-num);
+      }
+      setTexto(partes.join(""));
+    }
 
     if (op.includes(valor) && !temOp && texto !== "" && temVirgula == false) {
       // Operadores
@@ -35,6 +56,7 @@ function App() {
     if (valor == "c" || valor == "C") {
       // Deleta todos
       setTexto("");
+      console.clear();
       setTemOp(false);
     }
 
@@ -72,6 +94,8 @@ function App() {
         "*": "×",
         "/": "÷",
         "%": "%",
+        x: "×", // <-- adicionado
+        X: "×", // <-- adicionado
       };
 
       if (mapaOp[tecla]) {
@@ -175,7 +199,7 @@ function App() {
           </button>
 
           <button className="btnCalc" onClick={adicionar}>
-            &#x2212;&#x2215;&#x2b;
+            ±
           </button>
           <button className="btnCalc" onClick={adicionar}>
             0
