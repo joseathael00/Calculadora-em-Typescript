@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import "./media.css";
+import expr from "./scripts/operacao";
 
 function App() {
   const [texto, setTexto] = useState("");
   const [temOp, setTemOp] = useState(false);
   const [temVirgula, setVirgula] = useState(false);
 
-  const blacklist = ["X²", "X³", "√", "∛", "−∕+", "="];
+  const blacklist = ["X²", "X³", "√", "∛", "−∕+"];
   const num = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
   const op = ["%", "÷", "×", "−", "+"];
 
@@ -15,28 +16,38 @@ function App() {
     console.log(typeof texto);
     // Valores que não aparecem
     if (blacklist.includes(valor)) return;
-    else if (
-      op.includes(valor) &&
-      !temOp &&
-      texto !== "" &&
-      temVirgula == false
-    ) {
+
+    if (op.includes(valor) && !temOp && texto !== "" && temVirgula == false) {
       // Operadores
       setTexto((t) => t + valor);
       setTemOp(true);
       return;
-    } else if (num.includes(valor)) {
+    }
+
+    if (num.includes(valor)) {
       // Números
       setTexto((t) => t + valor);
       setTemOp(false);
       setVirgula(false);
       return;
-    } else if (valor == "c" || valor == "C") {
+    }
+
+    if (valor == "c" || valor == "C") {
       // Deleta todos
       setTexto("");
       setTemOp(false);
-    } else if (valor == "⌫") {
+    }
+
+    if (valor == "⌫") {
       setTexto((t) => t.slice(0, -1));
+    }
+
+    if (valor == "=") {
+      if (texto.length >= 1) {
+        setTexto(expr(texto));
+      } else {
+        return;
+      }
     }
   }
   //eslint-disable-next-line
@@ -74,9 +85,14 @@ function App() {
         return;
       }
 
-      // Enter
+      // Apaga
       if (tecla === "c") {
         processarEntrada("c");
+      }
+
+      // Enter
+      if (tecla === "Enter") {
+        processarEntrada("=");
       }
     }
 
