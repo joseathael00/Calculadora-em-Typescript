@@ -12,79 +12,168 @@ function App() {
   const num = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
   const op = ["%", "÷", "×", "−", "+"];
 
-  // const partes = texto.match(/(\d+(?:[.,]\d+)?|[+\-*/x÷%])/g) || [];
-
   function processarEntrada(valor: string) {
     if (blacklist.includes(valor)) {
       const partes = texto.match(/(-?\d+(?:[.,]\d+)?|[+\-*/x÷×−%])/g) || [];
+
+      if (partes.length === 0) return;
+
       const ultimo = partes[partes.length - 1];
 
-      if (valor == "X²") {
-        const num = Number(ultimo.replace(",", "."));
-        partes[partes.length - 1] = String(num ** 2);
-      } else if (valor == "X³") {
-        const num = Number(ultimo.replace(",", "."));
-        partes[partes.length - 1] = String(num ** 3);
-      } else if (valor == "√") {
-        const num = Number(ultimo.replace(",", "."));
-        partes[partes.length - 1] = String(Math.sqrt(num));
-      } else if (valor == "∛") {
-        const num = Number(ultimo.replace(",", "."));
-        partes[partes.length - 1] = String(Math.cbrt(num));
-      } else if (valor == "±") {
-        const num = Number(ultimo.replace(",", "."));
-        partes[partes.length - 1] = String(-num);
+      if (op.includes(ultimo)) return;
+
+      if (valor === "X²") {
+        const numValue = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(numValue ** 2).replace(".", ",");
+      } else if (valor === "X³") {
+        const numValue = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(numValue ** 3).replace(".", ",");
+      } else if (valor === "√") {
+        const numValue = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(Math.sqrt(numValue)).replace(
+          ".",
+          ",",
+        );
+      } else if (valor === "∛") {
+        const numValue = Number(ultimo.replace(",", "."));
+        partes[partes.length - 1] = String(Math.cbrt(numValue)).replace(
+          ".",
+          ",",
+        );
+      } else if (valor === "±") {
+        if (ultimo.startsWith("-")) {
+          partes[partes.length - 1] = ultimo.slice(1);
+        } else {
+          partes[partes.length - 1] = "-" + ultimo;
+        }
       }
-      setTexto(partes.join(""));
+
+      const novoTexto = partes.join("");
+      setTexto(novoTexto);
+
+      const novoUltimo = partes[partes.length - 1];
+      setVirgula(novoUltimo.includes(","));
+      setTemOp(false);
+      return;
     }
 
-    if (op.includes(valor) && !temOp && texto !== "" && temVirgula == false) {
-      // Operadores
+    if (op.includes(valor)) {
+      if (texto === "") return;
+
+      if (temOp) return;
+
+      const ultimoChar = texto[texto.length - 1];
+      if (ultimoChar === ",") return;
+
       setTexto((t) => t + valor);
       setTemOp(true);
+      setVirgula(false);
+      return;
+    }
+
+    if (valor === ",") {
+      if (texto === "") return;
+
+      const ultimoChar = texto[texto.length - 1];
+      if (op.includes(ultimoChar)) return;
+
+      if (ultimoChar === ",") return;
+
+      const partes = texto.match(/(-?\d+(?:[.,]\d+)?|[+\-*/x÷×−%])/g) || [];
+      const ultimoElemento = partes[partes.length - 1];
+
+      if (
+        ultimoElemento &&
+        !op.includes(ultimoElemento) &&
+        ultimoElemento.includes(",")
+      ) {
+        return;
+      }
+
+      setTexto((t) => t + ",");
+      setVirgula(true);
+      setTemOp(false);
       return;
     }
 
     if (num.includes(valor)) {
-      // Números
       setTexto((t) => t + valor);
+      setTemOp(false);
+      return;
+    }
+
+    if (valor === "c" || valor === "C") {
+      setTexto("");
+      console.clear();
       setTemOp(false);
       setVirgula(false);
       return;
     }
 
-    if (valor == "c" || valor == "C") {
-      // Deleta todos
-      setTexto("");
-      console.clear();
-      setTemOp(false);
-    }
+    if (valor === "⌫") {
+      if (texto.length === 0) return;
 
-    if (valor == "⌫") {
-      setTexto((t) => t.slice(0, -1));
-    }
+      const novoTexto = texto.slice(0, -1);
 
-    if (valor == "=") {
-      if (texto.length >= 1) {
-        setTexto(expr(texto));
-      } else {
+      setTexto(novoTexto);
+
+      if (novoTexto === "") {
+        setTemOp(false);
+        setVirgula(false);
         return;
       }
+
+      const partes = novoTexto.match(/(-?\d+(?:[.,]\d+)?|[+\-*/x÷×−%])/g) || [];
+      const ultimoElemento = partes[partes.length - 1];
+
+      if (ultimoElemento && op.includes(ultimoElemento)) {
+        setTemOp(true);
+        if (partes.length >= 2) {
+          const penultimoElemento = partes[partes.length - 2];
+          setVirgula(penultimoElemento.includes(","));
+        } else {
+          setVirgula(false);
+        }
+      } else {
+        setTemOp(false);
+        setVirgula(ultimoElemento ? ultimoElemento.includes(",") : false);
+      }
+
+      return;
+    }
+
+    if (valor === "=") {
+      if (texto.length >= 1) {
+        const ultimoChar = texto[texto.length - 1];
+        if (op.includes(ultimoChar) || ultimoChar === ",") return;
+
+        const resultado = expr(texto);
+        setTexto(resultado);
+        setTemOp(false);
+        setVirgula(resultado.includes(","));
+      }
+      return;
     }
   }
-  //eslint-disable-next-line
-  function adicionar(e: any) {
-    const valor = e.target.textContent;
-    processarEntrada(valor);
+
+  function adicionar(e: React.MouseEvent<HTMLButtonElement>) {
+    const valor = e.currentTarget.textContent;
+    if (valor) {
+      processarEntrada(valor);
+    }
   }
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       const tecla = e.key;
 
-      // números
       if (/[0-9]/.test(tecla)) {
         processarEntrada(tecla);
+        return;
+      }
+
+      if (tecla === "," || tecla === ".") {
+        processarEntrada(",");
         return;
       }
 
@@ -94,8 +183,8 @@ function App() {
         "*": "×",
         "/": "÷",
         "%": "%",
-        x: "×", // <-- adicionado
-        X: "×", // <-- adicionado
+        x: "×",
+        X: "×",
       };
 
       if (mapaOp[tecla]) {
@@ -103,18 +192,16 @@ function App() {
         return;
       }
 
-      // backspace
       if (tecla === "Backspace") {
         processarEntrada("⌫");
         return;
       }
 
-      // Apaga
-      if (tecla === "c") {
+      if (tecla === "c" || tecla === "C") {
         processarEntrada("c");
+        return;
       }
 
-      // Enter
       if (tecla === "Enter") {
         processarEntrada("=");
       }
@@ -122,8 +209,7 @@ function App() {
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-    //eslint-disable-next-line
-  }, [texto, temOp]);
+  }, [texto, temOp, temVirgula]);
 
   return (
     <>
@@ -143,20 +229,20 @@ function App() {
             C
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#9003;
+            ⌫
           </button>
 
           <button className="btnCalc" onClick={adicionar}>
-            &#37;
+            %
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#8730;
+            √
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#x221B;
+            ∛
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#xf7;
+            ÷
           </button>
 
           <button className="btnCalc" onClick={adicionar}>
@@ -169,7 +255,7 @@ function App() {
             9
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#xd7;
+            ×
           </button>
 
           <button className="btnCalc" onClick={adicionar}>
@@ -182,7 +268,7 @@ function App() {
             6
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#x2212;
+            −
           </button>
 
           <button className="btnCalc" onClick={adicionar}>
@@ -195,7 +281,7 @@ function App() {
             3
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#x2b;
+            +
           </button>
 
           <button className="btnCalc" onClick={adicionar}>
@@ -208,7 +294,7 @@ function App() {
             ,
           </button>
           <button className="btnCalc" onClick={adicionar}>
-            &#x3d;
+            =
           </button>
         </div>
       </div>
